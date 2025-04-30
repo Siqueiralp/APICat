@@ -8,6 +8,4 @@ public class ProcessoQOL // Table para update e verificação
 {
     public int NumSerieProduto { get; set; }
     public int CorCodigo { get; set; }
-
-    ICollection
 }
