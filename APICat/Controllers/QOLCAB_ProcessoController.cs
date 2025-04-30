@@ -15,8 +15,8 @@ namespace APICat.Controllers
             _context = context;
         }
 
-        [HttpGet("{id:long}", Name="ObterCor")]
-        public ActionResult<ProcessoQOL> Get(long id)
+        [HttpGet("{id}", Name="ObterCor")]
+        public ActionResult<ProcessoQOL> Get(String id)
         {
             var produto = _context.QOLCAB_Processo.AsNoTracking().FirstOrDefault(p => p.NumSerieProduto == id);
             if (produto is null)

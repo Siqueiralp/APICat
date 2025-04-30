@@ -17,23 +17,23 @@ namespace APICat.Controllers
             _context = context;
         }
 
-        [HttpGet("{id:int}", Name ="ObterNumSerie")]
-        public ActionResult<ProdutoQOL> Get(int id)
+        [HttpGet("{id}", Name ="ObterNumSerie")]
+        public ActionResult<ProdutoQOL> Get(String id)
         {
-            var cabine = _context.PRODUTOQOL.FirstOrDefault(p => p.Chassis == id.ToString());
+            var cabine = _context.PRODUTOQOL.FirstOrDefault(p => p.Chassis == id);
             if (cabine != null)
             {
-                var _cabine = _context.QOLCAB_Processo.FirstOrDefault(q => q.NumSerieProduto.ToString() == cabine.NumSerie);
+                var _cabine = _context.QOLCAB_Processo.FirstOrDefault(q => q.NumSerieProduto == cabine.NumSerie);
                 return Ok(_cabine);
             }
-            var cor = _context.PRODUTOQOL.FirstOrDefault(p => p.Chassis.ToString() == id.ToString());
+            var cor = _context.PRODUTOQOL.FirstOrDefault(p => p.Chassis == id);
             if (cabine is null) return NotFound("Chassi não encontrado.");
 
             return Ok(cabine);
         }
 
-        [HttpPut("{id:long}")]
-        public ActionResult Put(long id, ProcessoQOL categoria)
+        [HttpPut("{id}")]
+        public ActionResult Put(String id, ProcessoQOL categoria)
         {
             if (id != categoria.NumSerieProduto)
             {

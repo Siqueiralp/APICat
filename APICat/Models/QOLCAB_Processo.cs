@@ -7,6 +7,6 @@ namespace APICat.Models;
 public class ProcessoQOL // Table para update e verificação
 {
     [Key]
-    public int NumSerieProduto { get; set; }
-    public int CorCodigo { get; set; }
+    public String NumSerieProduto { get; set; }
+    public long CorCodigo { get; set; }
 }
