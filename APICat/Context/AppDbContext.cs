@@ -13,7 +13,5 @@ namespace APICat.Context
 
         public DbSet<ProdutoQOL>? PRODUTOQOL { get; set; }
         public DbSet<ProcessoQOL>? QOLCAB_Processo { get; set; }
-        public DbSet<Categoria>? Categorias { get; set; }
-        public DbSet<Produto>? Produtos { get; set; }
     }
 }

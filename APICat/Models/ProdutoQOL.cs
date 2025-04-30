@@ -4,6 +4,7 @@ namespace APICat.Models;
 
 public class ProdutoQOL
 {
-    public int Chassis { get; set; }
-    public int NumSerie { get; set; }
+    public String Chassis { get; set; }
+    [Key]
+    public String? NumSerie { get; set; }
 }
