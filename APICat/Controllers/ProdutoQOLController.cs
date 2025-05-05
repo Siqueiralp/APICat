@@ -17,25 +17,26 @@ namespace APICat.Controllers
             _context = context;
         }
 
-        [HttpGet("{id}", Name ="ObterNumSerie")]
-        public ActionResult<ProdutoQOL> Get(String id)
+        [HttpGet("{Chassi}", Name ="ObterNumSerie")]
+        public ActionResult<ProdutoQOL> Get(String Chassi)
         {
-            var cabine = _context.PRODUTOQOL.FirstOrDefault(p => p.Chassis == id);
+            var cabine = _context.PRODUTOQOL.FirstOrDefault(p => p.Chassis == Chassi);
             if (cabine != null)
             {
                 var _cabine = _context.QOLCAB_Processo.FirstOrDefault(q => q.NumSerieProduto == cabine.NumSerie);
                 return Ok(_cabine);
             }
-            var cor = _context.PRODUTOQOL.FirstOrDefault(p => p.Chassis == id);
+            var cor = _context.PRODUTOQOL.FirstOrDefault(p => p.Chassis == Chassi);
             if (cabine is null) return NotFound("Chassi não encontrado.");
 
             return Ok(cabine);
         }
 
-        [HttpPut("{id}")]
-        public ActionResult Put(String id, ProcessoQOL categoria)
+        [HttpPut("{NSerie},{Chassi}")]
+        public ActionResult Put(String NSerie, ProcessoQOL categoria)
         {
-            if (id != categoria.NumSerieProduto)
+ 
+            if (NSerie != categoria.NumSerieProduto)// inserir no PUT a lógica para verificar se o chassi corresponde ao ID.
             {
                 return BadRequest();
             }
