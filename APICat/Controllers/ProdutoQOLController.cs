@@ -32,17 +32,32 @@ namespace APICat.Controllers
             return Ok(cabine);
         }
 
-        [HttpPut("{NSerie},{Chassi}")]
-        public ActionResult Put(String NSerie, ProcessoQOL categoria)
+        [HttpPut("{NSerie},{Chassi},{CorErrada},{CorCerta}")]
+        public ActionResult Put(String NSerie, int CorErrada, String Chassi, int CorCerta)
         {
- 
-            if (NSerie != categoria.NumSerieProduto)// inserir no PUT a lógica para verificar se o chassi corresponde ao ID.
+            var _processo = _context.QOLCAB_Processo.FirstOrDefault(q => q.NumSerieProduto == NSerie); // Obtem os dados relativos ao n. de serie informado
+            var _produto = _context.PRODUTOQOL.FirstOrDefault(p => p.NumSerie == NSerie); // Obtem os dados relativos ao n. de serie informado
+            if(_processo == null || _produto == null) // Verifica se o n. de serie informado existe na base de dados.
             {
-                return BadRequest();
+                return NotFound("N. de série não encontrado.");
             }
-            _context.Entry(categoria).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            if (Chassi != _produto.Chassis)// inserir no PUT a lógica para verificar se o chassi corresponde ao ID.
+            {
+                return BadRequest("O chassi não corresponde ao numero de serie informado.");
+            }
+            if (CorErrada != _processo.CorCodigo)// inserir no PUT a lógica para verificar se o chassi corresponde ao ID.
+            {
+                return BadRequest("A cabine encontrada não possui a cor errada informada.");
+            }
+            var _colorcheck = _context.QOLCAB_Cor.FirstOrDefault(cc => cc.Codigo == CorCerta);
+            if (_colorcheck == null)
+            {
+                return BadRequest("O código da cor a ser alterada não existe.");
+            }
+            _processo.CorCodigo = CorCerta; // Altera a cor para o código informado.
+            _context.Entry(_processo).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
             _context.SaveChanges();
-            return Ok(categoria);
+            return Ok(_processo);
         }
 
     }
