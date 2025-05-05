@@ -12,7 +12,7 @@ namespace APICat.Controllers
     public class ProdutoQOLController : ControllerBase
     {
         private readonly AppDbContext _context; // insere a referencia classe do contexto no documento
-        public ProdutoQOLController(AppDbContext context) // Cria uma instância de contexto de conexão à db.
+        public ProdutoQOLController(AppDbContext context)
         {
             _context = context;
         }
@@ -32,34 +32,100 @@ namespace APICat.Controllers
             return Ok(cabine);
         }
 
-        [HttpPut("{NSerie},{Chassi},{CorErrada},{CorCerta}")]
-        public ActionResult Put(String NSerie, int CorErrada, String Chassi, int CorCerta)
+        [HttpPost("trocacor")]
+        public ActionResult PostTrocaCor(
+            [FromQuery] string NSerie,
+            [FromQuery] string Chassi,
+            [FromQuery] int CorErrada,
+            [FromQuery] int CorCerta)
         {
-            var _processo = _context.QOLCAB_Processo.FirstOrDefault(q => q.NumSerieProduto == NSerie); // Obtem os dados relativos ao n. de serie informado
-            var _produto = _context.PRODUTOQOL.FirstOrDefault(p => p.NumSerie == NSerie); // Obtem os dados relativos ao n. de serie informado
-            if(_processo == null || _produto == null) // Verifica se o n. de serie informado existe na base de dados.
+            try
             {
-                return NotFound("N. de série não encontrado.");
+                var _processo =  GetProcessoQOL(NSerie);
+                var _produto = GetProdutoQol(NSerie);
+                ValidateChassisOnQOLDataBase(Chassi, NSerie);
+
+                if (CorErrada != _processo.CorCodigo) // Verifica se o chassi realmente possui a cor errada informada.
+                {
+                    return BadRequest($"A cabine de n. de chassi {Chassi} não possui a cor {CorErrada}, atualmente ela esta com a cor: {_processo.CorCodigo}.");
+                }
+
+                var _colorcheck = _context.QOLCAB_Cor.FirstOrDefault(cc => cc.Codigo == CorCerta);
+                if (_colorcheck == null) // Verifica se a cor informada existe no banco de dados.
+                {
+                    return BadRequest($"O código da cor ({CorCerta}) a ser alterada não existe na tabela de Cores [dbo.QOLCAB_Cor].");
+                }
+
+                _processo.CorCodigo = CorCerta; // Altera a cor para o código informado.
+                _context.Entry(_processo).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                _context.SaveChanges();
+                return Ok(_processo);
             }
-            if (Chassi != _produto.Chassis)// inserir no PUT a lógica para verificar se o chassi corresponde ao ID.
+            catch (InvalidOperationException ex)
             {
-                return BadRequest("O chassi não corresponde ao numero de serie informado.");
+                return BadRequest(ex.Message);
             }
-            if (CorErrada != _processo.CorCodigo)// inserir no PUT a lógica para verificar se o chassi corresponde ao ID.
+            catch (Exception ex)
             {
-                return BadRequest("A cabine encontrada não possui a cor errada informada.");
+                //// Salvar no banco de dados o erro, enviar um teams pro Dev e abrir um INC
+                //// Rollback
+                return BadRequest($"Erro no sistema, valide por gentileza o erro na mensagem a seguir, Exception: {ex.Message}");
             }
-            var _colorcheck = _context.QOLCAB_Cor.FirstOrDefault(cc => cc.Codigo == CorCerta);
-            if (_colorcheck == null)
+            finally
             {
-                return BadRequest("O código da cor a ser alterada não existe.");
+                /// Fechar a conexão do banco de dados
             }
-            _processo.CorCodigo = CorCerta; // Altera a cor para o código informado.
-            _context.Entry(_processo).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-            _context.SaveChanges();
-            return Ok(_processo);
         }
 
+        /// <summary>
+        /// Verifica se o Chassi informado corresponde ao número de série informado.
+        /// </summary>
+        /// <param name="chassi">Chassis que foi enviado pelo request.</param>
+        /// <param name="nSerie">Numero de série enviado pelo request.</param>
+        /// <param name="produto"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        private void ValidateChassisOnQOLDataBase(string chassi, string nSerie)
+        {
+            var _produto = _context.PRODUTOQOL.FirstOrDefault(p => p.NumSerie == nSerie); // Obtem os dados relativos ao n. de serie informado
+            if (chassi != _produto.Chassis) // Verifica se o Chassi informado corresponde ao número de série informado.
+            {
+                throw new InvalidOperationException($"O chassis: {chassi} não corresponde ao numero de serie: {nSerie} informado pelo QOL, Chassis informado no QOL: {_produto.Chassis}.");
+            }
+        }
+
+        /// <summary>
+        /// Obtém o objeto do Produto da tabela QOL com base no Numero de Série.
+        /// </summary>
+        /// <param name="nSerie">Número de série enviado pelo request.</param>
+        /// <returns>Objeto do produto QOL com base no número de série.</returns>
+        /// <exception cref="InvalidOperationException">Caso não seja encontrado o objeto na tabela QOL ele retorna a mensagem de erro.</exception>
+        private ProdutoQOL GetProdutoQol(string nSerie)
+        {
+            var _produto = _context.PRODUTOQOL.FirstOrDefault(p => p.NumSerie == nSerie);
+            if (_produto == null)
+            {
+                throw new InvalidOperationException($"N. de série {nSerie} não encontrado na tabela dbo.PRODUTOQOL. Verifique a integração.");
+            }
+
+            return _produto;
+        }
+
+        /// <summary>
+        /// Obtém o objeto do Processo da tabela QOL com base no Numero de Série.
+        /// </summary>
+        /// <param name="nSerie"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        private ProcessoQOL GetProcessoQOL(string nSerie)
+        {
+            var _processo = _context.QOLCAB_Processo.FirstOrDefault(q => q.NumSerieProduto == nSerie);
+            if (_processo == null)
+            {
+                throw new InvalidOperationException($"N. de série {nSerie} não encontrado na tabela dbo.QOLCAB_Processo. Verifique o app CTCAB.");
+            }
+
+            return _processo;
+        }
     }
 }
 
